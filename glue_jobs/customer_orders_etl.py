@@ -1,41 +1,51 @@
-import json
-import pandas as pd
+import sys
+from awsglue.utils import getResolvedOptions
+from pyspark.context import SparkContext
+from awsglue.context import GlueContext
+from awsglue.job import Job
 
-# Read local JSON
-with open("../data/customer_orders.json", "r") as file:
-    data = json.load(file)
+sc = SparkContext()
+glueContext = GlueContext(sc)
+spark = glueContext.spark_session
+job = Job(glueContext)
 
-# Customer table data
-customer_rows = []
+# Read JSON from S3
+df = spark.read.option("multiline", "true").json(
+    "s3://an-aws-ma-data-pipeline-bucket/input-data/customer_orders.json"
+#    "s3://mahesh-aws-ma-data-pipeline-2026/input/customer_orders.json"
+)
 
-# Orders table data
-order_rows = []
+# Flatten customer data
+customer_df = df.select(
+    "customer_id",
+    "customer_name",
+    "email",
+    "phone",
+    "city",
+    "registration_date"
+)
 
-for customer in data:
-    customer_rows.append({
-        "customer_id": customer["customer_id"],
-        "customer_name": customer["customer_name"],
-        "email": customer["email"],
-        "phone": customer["phone"],
-        "city": customer["city"],
-        "registration_date": customer["registration_date"]
-    })
+# Flatten orders data
+orders_df = df.selectExpr(
+    "customer_id",
+    "explode(orders) as order"
+).selectExpr(
+    "customer_id",
+    "order.order_id",
+    "order.order_date",
+    "order.product_name",
+    "order.quantity",
+    "order.price"
+)
 
-    for order in customer["orders"]:
-        order_rows.append({
-            "order_id": order["order_id"],
-            "customer_id": customer["customer_id"],
-            "order_date": order["order_date"],
-            "product_name": order["product_name"],
-            "quantity": order["quantity"],
-            "price": order["price"]
-        })
+# Write parquet output for now
+customer_df.write.mode("overwrite").parquet(
+    "s3://an-aws-ma-data-pipeline-bucket/output-data/customer"
+)
 
-customer_df = pd.DataFrame(customer_rows)
-orders_df = pd.DataFrame(order_rows)
+orders_df.write.mode("overwrite").parquet(
+    "s3://an-aws-ma-data-pipeline-bucket/output-data/order"
+)
 
-print("Customer Info Table")
-print(customer_df)
+job.commit()
 
-print("\nOrders Table")
-print(orders_df)
