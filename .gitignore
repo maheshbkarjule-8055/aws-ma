@@ -1,0 +1,19 @@
+# PyCharm / IDE files
+.idea/
+*.iml
+
+# Python
+__pycache__/
+*.pyc
+
+# Logs
+*.log
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# OS files
+.DS_Store
+Thumbs.db

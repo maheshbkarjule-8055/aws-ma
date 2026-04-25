@@ -1,0 +1,14 @@
+{
+  "StartAt": "RunGlueJob",
+  "States": {
+    "RunGlueJob": {
+      "Type": "Task",
+      "Comment": "Run ETL job",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "ma-customer-orders-job"
+      },
+      "End": true
+    }
+  }
+}
