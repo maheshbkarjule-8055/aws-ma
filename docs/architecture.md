@@ -1,12 +1,15 @@
-# AWS Data Pipeline Architecture
+# AWS Data Engineering Pipeline
 
-JSON data lands in S3.
-
-Glue PySpark job reads nested JSON.
-
-Data is split into:
-1. ma.customer_info
-2. ma.orders
-
-Step Function orchestrates:
-S3 → Glue → Redshift COPY → Validation
+JSON file lands in S3
+        ↓
+Glue PySpark ETL
+        ↓
+Flatten nested orders array
+        ↓
+Split into customer_info and orders tables
+        ↓
+Load to Redshift using COPY
+        ↓
+Orchestrate with Step Functions
+        ↓
+Infra managed with Terraform
